@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
       '<p style="color: var(--text-secondary);">این صفحه فقط برای مدیر اصلی سایت قابل دسترسی است.</p>' +
       '<a href="dashboard.html" class="btn" style="display: inline-block; margin-top: 1rem; text-decoration: none;">بازگشت به داشبورد</a>' +
       '</div>';
+    return; // کاربر عادی نباید لیست کاربران را درخواست کند (۴۰۳ برمی‌گرداند)
   }
   initSidebar();
   loadUsers();
@@ -19,12 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadUsers() {
   try {
-    const data = await apiCall('/users/');
+    const data = await apiCall('/users');
+    const tbody = document.getElementById('usersBody');
     if (data.success && data.data) {
       usersList = data.data.users || [];
       renderUsers();
-    } else {
-      document.getElementById('usersBody').innerHTML =
+    } else if (tbody) {
+      tbody.innerHTML =
         '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">' +
         (data.message || 'خطا در دریافت لیست کاربران') + '</td></tr>';
     }
@@ -41,6 +43,8 @@ function quotaLabel(quota) {
 
 function renderUsers() {
   const tbody = document.getElementById('usersBody');
+  if (!tbody) return;
+
   if (!usersList.length) {
     tbody.innerHTML =
       '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">' +
@@ -67,6 +71,15 @@ function renderUsers() {
       <td style="font-weight: 600;">${escapeHtml(u.username)}</td>
       <td>${isAdminRow ? 'مدیر' : 'کاربر'}</td>
       <td>${statusBadge}</td>
+      <td>${formatNumber(u.link_count || 0)}</td>
+      <td>${quotaLabel(u.link_quota)}</td>
+      <td>${formatDate(u.created_at)}</td>
+      <td style="white-space: nowrap;">${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+
 // ===== ساخت کاربر جدید =====
 function openCreateUserModal() {
   document.getElementById('createUserForm').reset();
@@ -86,13 +99,12 @@ async function createUser(event) {
   const payload = { username, password };
   if (quotaRaw !== '') payload.link_quota = parseInt(quotaRaw, 10);
 
-  const data = await apiCall('/users/', 'POST', payload);
+  const data = await apiCall('/users', 'POST', payload);
   if (data.success) {
-    showToast(`پنل کاربری «${username}» ساخته شد`);
+    showToast('پنل کاربری ساخته شد');
     closeCreateUserModal();
+    document.getElementById('createUserForm').reset();
     await loadUsers();
-    // به‌روزرسانی نوار کناری
-    _currentUserPromise = null;
     initSidebar();
   } else {
     showToast(data.message || 'خطا در ساخت کاربر', 'error');
@@ -183,12 +195,4 @@ async function deleteUser(id) {
   } else {
     showToast(data.message || 'خطا در حذف کاربر', 'error');
   }
-}
-
-      <td>${formatNumber(u.link_count || 0)}</td>
-      <td>${quotaLabel(u.link_quota)}</td>
-      <td>${formatDate(u.created_at)}</td>
-      <td style="white-space: nowrap;">${actions}</td>
-    </tr>`;
-  }).join('');
 }

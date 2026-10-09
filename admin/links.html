@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لینک‌ها | Linko</title>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+  <script src="../js/config.js"></script>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="logo" style="margin-bottom: 2rem;">Linko</div>
+      <nav>
+        <a href="dashboard.html" class="nav-link">📊 داشبورد</a>
+        <a href="links.html" class="nav-link active">🔗 لینک‌ها</a>
+        <a href="analytics.html" class="nav-link">📈 تحلیل‌ها</a>
+        <a href="users.html" class="nav-link nav-admin-only">👥 کاربران</a>
+        <a href="settings.html" class="nav-link">⚙️ تنظیمات</a>
+        <a href="#" onclick="logout()" class="nav-link" style="margin-top: 2rem;">🚪 خروج</a>
+      </nav>
+    </aside>
+    
+    <main class="main-content">
+      <div class="top-header">
+        <div>
+          <h1 style="font-size: 1.5rem;">مدیریت لینک‌ها</h1>
+          <p style="color: var(--text-secondary);">همه لینک‌های کوتاه شده شما</p>
+        </div>
+        <button onclick="openCreateModal()" class="btn">+ ساخت لینک جدید</button>
+      </div>
+      
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <input type="search" class="input" id="searchInput" placeholder="جستجو در لینک‌ها..." oninput="handleSearch()">
+      </div>
+      
+      <div class="card">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>اسلاگ</th>
+                <th>عنوان</th>
+                <th>آدرس مقصد</th>
+                <th>کلیک‌ها</th>
+                <th>وضعیت</th>
+                <th>تاریخ ساخت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="linksTableBody"></tbody>
+          </table>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <div id="paginationInfo" style="color: var(--text-secondary); font-size: 0.875rem;"></div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button onclick="changePage(-1)" class="btn-outline btn btn-sm" id="prevBtn">قبلی</button>
+            <button onclick="changePage(1)" class="btn-outline btn btn-sm" id="nextBtn">بعدی</button>
+          </div>
+        </div>
+      </div>
+      
+      <div id="createModal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <h2 style="margin-bottom: 1.5rem;">ساخت لینک جدید</h2>
+          <form id="createForm">
+            <div class="form-group">
+              <label for="original_url">آدرس مقصد *</label>
+              <input type="url" class="input" id="original_url" placeholder="https://example.com" required>
+            </div>
+            <div class="form-group">
+              <label for="slug">اسلاگ سفارشی (اختیاری)</label>
+              <input type="text" class="input" id="slug" placeholder="my-link">
+            </div>
+            <div class="form-group">
+              <label for="title">عنوان (اختیاری)</label>
+              <input type="text" class="input" id="title" placeholder="عنوان لینک">
+            </div>
+            <div class="form-group">
+              <label for="max_clicks">حداکثر کلیک (اختیاری)</label>
+              <input type="number" class="input" id="max_clicks" placeholder="نامحدود">
+            </div>
+            <div class="form-group">
+              <label for="expires_at">تاریخ انقضا (اختیاری)</label>
+              <input type="datetime-local" class="input" id="expires_at">
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+              <button type="submit" class="btn" style="flex: 1; justify-content: center;">ساخت لینک</button>
+              <button type="button" onclick="closeCreateModal()" class="btn-outline btn">انصراف</button>
+            </div>
+            <div id="createResult" style="display: none; margin-top: 1.25rem; padding: 1rem; background: var(--secondary); border-radius: 0.5rem; border: 1px solid var(--border);">
+              <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">لینک کوتاه شما آماده است:</p>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <code id="createdUrl" style="flex: 1; font-size: 0.9rem; background: var(--background); padding: 0.5rem 0.75rem; border-radius: 0.375rem; overflow-x: auto; white-space: nowrap;"></code>
+                <button type="button" onclick="copyCreatedLink()" class="btn btn-sm" title="کپی لینک">📋 کپی</button>
+              </div>
+              <p id="slugHint" style="display: none; font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.75rem;"></p>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div id="editModal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <h2 style="margin-bottom: 1.5rem;">ویرایش لینک</h2>
+          <form id="editForm">
+            <input type="hidden" id="editLinkId">
+            <div class="form-group">
+              <label for="edit_original_url">آدرس مقصد *</label>
+              <input type="url" class="input" id="edit_original_url" placeholder="https://example.com" required>
+            </div>
+            <div class="form-group">
+              <label for="edit_slug">اسلاگ (اختیاری)</label>
+              <input type="text" class="input" id="edit_slug" placeholder="my-link">
+            </div>
+            <div class="form-group">
+              <label for="edit_title">عنوان (اختیاری)</label>
+              <input type="text" class="input" id="edit_title" placeholder="عنوان لینک">
+            </div>
+            <div class="form-group">
+              <label for="edit_max_clicks">حداکثر کلیک (اختیاری)</label>
+              <input type="number" class="input" id="edit_max_clicks" placeholder="نامحدود" min="1">
+            </div>
+            <div class="form-group">
+              <label for="edit_expires_at">تاریخ انقضا (اختیاری)</label>
+              <input type="datetime-local" class="input" id="edit_expires_at">
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" id="edit_is_active" style="width: 1rem; height: 1rem;">
+              <label for="edit_is_active" style="margin: 0;">لینک فعال باشد</label>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+              <button type="submit" class="btn" style="flex: 1; justify-content: center;">ذخیره تغییرات</button>
+              <button type="button" onclick="closeEditModal()" class="btn-outline btn">انصراف</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/links.js"></script>
+</body>
+</html>

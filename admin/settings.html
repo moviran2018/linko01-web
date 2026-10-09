@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تنظیمات | Linko</title>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+  <script src="../js/config.js"></script>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="logo" style="margin-bottom: 2rem;">Linko</div>
+      <nav>
+        <a href="dashboard.html" class="nav-link">📊 داشبورد</a>
+        <a href="links.html" class="nav-link">🔗 لینک‌ها</a>
+        <a href="analytics.html" class="nav-link">📈 تحلیل‌ها</a>
+        <a href="users.html" class="nav-link nav-admin-only">👥 کاربران</a>
+        <a href="settings.html" class="nav-link active">⚙️ تنظیمات</a>
+        <a href="#" onclick="logout()" class="nav-link" style="margin-top: 2rem;">🚪 خروج</a>
+      </nav>
+    </aside>
+    
+    <main class="main-content">
+      <div class="top-header">
+        <div>
+          <h1 style="font-size: 1.5rem;">تنظیمات</h1>
+          <p style="color: var(--text-secondary);">شخصی‌سازی رابط کاربری</p>
+        </div>
+      </div>
+      
+      <div class="card" style="max-width: 600px;">
+        <h2 style="margin-bottom: 1.5rem;">ظاهر و زبان</h2>
+        
+        <div class="form-group">
+          <label>حالت نمایش</label>
+          <div style="display: flex; gap: 0.75rem;">
+            <button onclick="setTheme('light')" class="btn-outline btn" id="lightBtn" style="flex: 1; justify-content: center;">☀️ روشن</button>
+            <button onclick="setTheme('dark')" class="btn-outline btn" id="darkBtn" style="flex: 1; justify-content: center;">🌙 تیره</button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>جهت متن</label>
+          <div style="display: flex; gap: 0.75rem;">
+            <button onclick="setDirection('rtl')" class="btn-outline btn" id="rtlBtn" style="flex: 1; justify-content: center;">→ راست به چپ</button>
+            <button onclick="setDirection('ltr')" class="btn-outline btn" id="ltrBtn" style="flex: 1; justify-content: center;">← چپ به راست</button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>زبان رابط</label>
+          <div style="display: flex; gap: 0.75rem;">
+            <button onclick="setLang('fa')" class="btn-outline btn" id="faBtn" style="flex: 1; justify-content: center;">🇮🇷 فارسی</button>
+            <button onclick="setLang('en')" class="btn-outline btn" id="enBtn" style="flex: 1; justify-content: center;">🇬🇧 English</button>
+          </div>
+        </div>
+        
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+          <h2 style="margin-bottom: 1rem;">درباره Linko</h2>
+          <p style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.6;">
+            نسخه ۱.۰.۰ — کوتاه‌کننده لینک حرفه‌ای مبتنی بر Cloudflare Workers.<br>
+            تمام داده‌ها در دیتابیس D1 کلودفلر ذخیره می‌شوند و IP کاربران هرگز به صورت خام ذخیره نمی‌شود.
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="max-width: 600px; margin-top: 1.5rem;">
+        <h2 style="margin-bottom: 0.25rem;">مدیریت حساب کاربری</h2>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+          برای تغییر نام کاربری یا رمز عبور، رمز فعلی خود را وارد کنید. نام کاربری جدید در نشست شما به‌روزرسانی می‌شود.
+        </p>
+        <form id="accountForm" onsubmit="return updateAccount(event)">
+          <div class="form-group">
+            <label for="current_password">رمز عبور فعلی *</label>
+            <input type="password" class="input" id="current_password" required>
+          </div>
+          <div class="form-group">
+            <label for="new_username">نام کاربری جدید (اختیاری)</label>
+            <input type="text" class="input" id="new_username" placeholder="نام کاربری فعلی خود را نگه دارید">
+          </div>
+          <div class="form-group">
+            <label for="new_password">رمز عبور جدید (اختیاری)</label>
+            <input type="password" class="input" id="new_password" placeholder="حداقل ۸ نویسه">
+          </div>
+          <button type="submit" class="btn" style="width: 100%; justify-content: center;">ذخیره تغییرات</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script>
+    // مقداردهی اولیه تنظیمات ذخیره شده
+    function initSettings() {
+      const theme = localStorage.getItem('linko_theme') || 'light';
+      const dir = localStorage.getItem('linko_dir') || 'rtl';
+      const lang = localStorage.getItem('linko_lang') || 'fa';
+      
+      setTheme(theme, false);
+      setDirection(dir, false);
+      setLang(lang, false);
+    }
+    
+    function setTheme(theme, save = true) {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (save) localStorage.setItem('linko_theme', theme);
+      
+      document.getElementById('lightBtn').style.background = theme === 'light' ? 'var(--primary)' : '';
+      document.getElementById('lightBtn').style.color = theme === 'light' ? 'white' : '';
+      document.getElementById('darkBtn').style.background = theme === 'dark' ? 'var(--primary)' : '';
+      document.getElementById('darkBtn').style.color = theme === 'dark' ? 'white' : '';
+    }
+    
+    function setDirection(dir, save = true) {
+      document.documentElement.setAttribute('dir', dir);
+      if (save) localStorage.setItem('linko_dir', dir);
+      
+      document.getElementById('rtlBtn').style.background = dir === 'rtl' ? 'var(--primary)' : '';
+      document.getElementById('rtlBtn').style.color = dir === 'rtl' ? 'white' : '';
+      document.getElementById('ltrBtn').style.background = dir === 'ltr' ? 'var(--primary)' : '';
+      document.getElementById('ltrBtn').style.color = dir === 'ltr' ? 'white' : '';
+    }
+    
+    function setLang(lang, save = true) {
+      document.documentElement.setAttribute('lang', lang);
+      if (save) localStorage.setItem('linko_lang', lang);
+      
+      document.getElementById('faBtn').style.background = lang === 'fa' ? 'var(--primary)' : '';
+      document.getElementById('faBtn').style.color = lang === 'fa' ? 'white' : '';
+      document.getElementById('enBtn').style.background = lang === 'en' ? 'var(--primary)' : '';
+      document.getElementById('enBtn').style.color = lang === 'en' ? 'white' : '';
+      
+      if (lang === 'en') {
+        document.documentElement.setAttribute('dir', 'ltr');
+      } else {
+        document.documentElement.setAttribute('dir', 'rtl');
+      }
+    }
+    
+    // اعمال تنظیمات قبل از نمایش صفحه
+    initSettings();
+    checkAuth();
+    initSidebar();
+
+    // به‌روزرسانی حساب کاربری (نام کاربری و/یا رمز عبور)
+    async function updateAccount(event) {
+      event.preventDefault();
+      const current_password = document.getElementById('current_password').value;
+      const new_username = document.getElementById('new_username').value.trim();
+      const new_password = document.getElementById('new_password').value;
+
+      const payload = { current_password };
+      if (new_username) payload.new_username = new_username;
+      if (new_password) payload.new_password = new_password;
+
+      const data = await apiCall('/auth/account', 'PUT', payload);
+      if (data.success) {
+        showToast(data.message || 'حساب کاربری شما به‌روزرسانی شد');
+        // ذخیرهٔ توکن تازه
+        if (data.data && data.data.token) {
+          localStorage.setItem('linko_token', data.data.token);
+        }
+        if (data.data && data.data.username) {
+          localStorage.setItem('linko_username', data.data.username);
+        }
+        document.getElementById('accountForm').reset();
+        // بارگذاری مجدد نوار کناری با نام کاربری جدید
+        _currentUserPromise = null;
+        initSidebar();
+      } else {
+        showToast(data.message || 'خطا در به‌روزرسانی حساب', 'error');
+      }
+      return false;
+    }
+  </script>
+</body>
+</html>

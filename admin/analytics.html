@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تحلیل‌ها | Linko</title>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+  <script src="../js/config.js"></script>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="logo" style="margin-bottom: 2rem;">Linko</div>
+      <nav>
+        <a href="dashboard.html" class="nav-link">📊 داشبورد</a>
+        <a href="links.html" class="nav-link">🔗 لینک‌ها</a>
+        <a href="analytics.html" class="nav-link active">📈 تحلیل‌ها</a>
+        <a href="users.html" class="nav-link nav-admin-only">👥 کاربران</a>
+        <a href="settings.html" class="nav-link">⚙️ تنظیمات</a>
+        <a href="#" onclick="logout()" class="nav-link" style="margin-top: 2rem;">🚪 خروج</a>
+      </nav>
+    </aside>
+    
+    <main class="main-content">
+      <div class="top-header">
+        <div>
+          <h1 style="font-size: 1.5rem;">تحلیل داده‌ها</h1>
+          <p style="color: var(--text-secondary);">بررسی دقیق کلیک‌های لینک‌های شما</p>
+        </div>
+        <select class="select" id="linkSelect" onchange="loadAnalytics()" style="width: auto; min-width: 200px;">
+          <option value="">انتخاب لینک...</option>
+        </select>
+      </div>
+      
+      <div id="analyticsContent" style="display: none;">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👆</div>
+            <div class="stat-value" id="totalClicks">-</div>
+            <div class="stat-label">کل کلیک‌ها</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">👤</div>
+            <div class="stat-value" id="uniqueClicks">-</div>
+            <div class="stat-label">کلیک‌های یکتا</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🌍</div>
+            <div class="stat-value" id="countryCount">-</div>
+            <div class="stat-label">کشورهای مختلف</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📱</div>
+            <div class="stat-value" id="topDevice">-</div>
+            <div class="stat-label">پراستفاده‌ترین دستگاه</div>
+          </div>
+        </div>
+        
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <h2>روند کلیک‌ها در زمان</h2>
+            <div style="display: flex; gap: 0.5rem;">
+              <button onclick="setPeriod('24h')" class="btn-outline btn btn-sm" id="btn-24h">۲۴ ساعت</button>
+              <button onclick="setPeriod('7d')" class="btn-outline btn btn-sm" id="btn-7d">۷ روز</button>
+              <button onclick="setPeriod('30d')" class="btn-outline btn btn-sm" id="btn-30d">۳۰ روز</button>
+              <button onclick="exportData('csv')" class="btn-outline btn btn-sm">⬇️ CSV</button>
+              <button onclick="exportData('json')" class="btn-outline btn btn-sm">⬇️ JSON</button>
+            </div>
+          </div>
+          <div class="chart-container" id="timeSeriesChart"></div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+          <div class="card">
+            <h2 style="margin-bottom: 1rem;">🌍 موقعیت جغرافیایی</h2>
+            <div id="geoChart"></div>
+          </div>
+          <div class="card">
+            <h2 style="margin-bottom: 1rem;">📱 دستگاه‌ها</h2>
+            <div id="deviceChart"></div>
+          </div>
+          <div class="card">
+            <h2 style="margin-bottom: 1rem;">💻 سیستم‌عامل</h2>
+            <div id="osChart"></div>
+          </div>
+          <div class="card">
+            <h2 style="margin-bottom: 1rem;">🌐 مرورگرها</h2>
+            <div id="browserChart"></div>
+          </div>
+          <div class="card" style="grid-column: 1 / -1;">
+            <h2 style="margin-bottom: 1rem;">🔗 منابع ارجاع (Referrers)</h2>
+            <div id="referrerChart"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="noSelection" class="card" style="text-align: center; padding: 3rem;">
+        <p style="color: var(--text-secondary);">برای مشاهده تحلیل‌ها، یک لینک را انتخاب کنید</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/analytics.js"></script>
+</body>
+</html>

@@ -70,6 +70,8 @@ async function loadAnalytics() {
       renderBarChart('osChart', data.data.os, 'os');
       renderBarChart('browserChart', data.data.browsers, 'browser');
       renderBarChart('referrerChart', data.data.referrers, 'referrer');
+      // بارگذاری بخش تشخیص وی‌پی‌ان (به‌صورت مستقل، تا اگر خطا داد بقیه خراب نشن)
+      loadGeoReal();
     }
   } catch (error) {
     showToast('خطا در بارگذاری تحلیل‌ها', 'error');
@@ -79,7 +81,10 @@ async function loadAnalytics() {
 function renderOverview(data) {
   const link = data.link;
   const countries = new Set(data.geo.map(g => g.country).filter(Boolean));
-  
+
+  // ذخیرهٔ کل کلیک‌ها برای محاسبهٔ درصد وی‌پی‌ان
+  currentTotalClicks = link.click_count || 0;
+
   document.getElementById('totalClicks').textContent = formatNumber(link.click_count);
   document.getElementById('uniqueClicks').textContent = formatNumber(link.unique_click_count);
   document.getElementById('countryCount').textContent = formatNumber(countries.size);
@@ -171,6 +176,149 @@ function renderBarChart(containerId, data, key) {
       </div>
     `;
   }).join('');
+}
+
+// ---------- تشخیص وی‌پی‌ان و موقعیت واقعی ----------
+
+// کل کلیک‌های لینک جاری (برای محاسبهٔ درصد کلیک‌های مشکوک)
+let currentTotalClicks = 0;
+
+// تبدیل کد کشور (مثل IR) به پرچم emoji
+function countryCodeToFlag(code) {
+  if (!code || code.length !== 2) return '🏳️';
+  const A = 0x1F1E6;
+  return String.fromCodePoint(A + code.charCodeAt(0) - 65, A + code.charCodeAt(1) - 65);
+}
+
+// نام فارسی چند کشور رایج
+const COUNTRY_NAMES = {
+  IR: 'ایران', US: 'آمریکا', DE: 'آلمان', FR: 'فرانسه', GB: 'انگلستان',
+  NL: 'هلند', CA: 'کانادا', TR: 'ترکیه', AE: 'امارات', RU: 'روسیه',
+  IN: 'هند', JP: 'ژاپن', CN: 'چین', SA: 'عربستان', KW: 'کویت',
+  QA: 'قطر', IL: 'اسرائیل', CH: 'سوئیس', SE: 'سوئد', AU: 'استرالیا',
+  BR: 'برزیل', EG: 'مصر', IQ: 'عراق', AF: 'افغانستان', PK: 'پاکستان',
+  IT: 'ایتالیا', ES: 'اسپانیا', NO: 'نروژ', FI: 'فنلاند', BE: 'بلژیک',
+  AT: 'اتریش', PL: 'لهستان', UA: 'اوکراین', ID: 'اندونزی', MY: 'مالزی',
+  SG: 'سنگاپور', HK: 'هنگ‌کنگ', KR: 'کره جنوبی', MX: 'مکزیک', AR: 'آرژانتین',
+  ZA: 'آفریقای جنوبی', NZ: 'نیوزلند', PT: 'پرتغال', GR: 'یونان'
+};
+
+function countryLabel(code) {
+  const upper = (code || '').toUpperCase();
+  return COUNTRY_NAMES[upper] ? `${COUNTRY_NAMES[upper]} (${upper})` : (upper || 'نامشخص');
+}
+
+async function loadGeoReal() {
+  if (!currentLinkId) return;
+
+  const btn = document.getElementById('refreshGeoBtn');
+  const summary = document.getElementById('geoRealSummary');
+  const table = document.getElementById('geoRealTable');
+
+  if (btn) btn.textContent = '⏳ در حال بارگذاری...';
+
+  try {
+    const data = await apiCall(`/analytics/links/${currentLinkId}/geo-real`);
+    if (data.success) {
+      renderGeoReal(data.data);
+    } else {
+      summary.innerHTML = '';
+      table.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 1rem;">خطا در دریافت آمار</p>';
+    }
+  } catch (error) {
+    showToast('خطا در دریافت آمار موقعیت', 'error');
+  } finally {
+    if (btn) btn.textContent = '🔄 به‌روزرسانی';
+  }
+}
+
+function renderGeoReal(data) {
+  const summary = document.getElementById('geoRealSummary');
+  const table = document.getElementById('geoRealTable');
+
+  const vpnCount = data.vpn_suspected_clicks || 0;
+  const totalCount = currentTotalClicks || 0;
+  const vpnPercent = totalCount > 0 ? Math.round((vpnCount / totalCount) * 100) : 0;
+  const comparison = data.geo_comparison || [];
+
+  // ---------- کارت خلاصه ----------
+  if (comparison.length === 0 && vpnCount === 0) {
+    summary.innerHTML = `
+      <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; text-align: center; margin-bottom: 1rem;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📭</div>
+        <p style="color: var(--text-secondary); margin: 0;">هنوز داده‌ای برای این لینک ثبت شده است. پس از چند کلیک دوباره بررسی کنید.</p>
+      </div>`;
+    table.innerHTML = '';
+    return;
+  }
+
+  const vpnColor = vpnCount > 0 ? '#ef4444' : '#10b981';
+  const vpnBg = vpnCount > 0 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)';
+  const vpnIcon = vpnCount > 0 ? '⚠️' : '✅';
+
+  summary.innerHTML = `
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+      <div style="background: ${vpnBg}; border: 1px solid ${vpnColor}; border-radius: 10px; padding: 1.25rem;">
+        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.4rem;">${vpnIcon} کلیک‌های مشکوک به وی‌پی‌ان</div>
+        <div style="font-size: 1.75rem; font-weight: 800; color: ${vpnColor};">${formatNumber(vpnCount)}</div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">از مجموع ${formatNumber(totalCount)} کلیک (${formatNumber(vpnPercent)}٪)</div>
+      </div>
+      <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem;">
+        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.4rem;">📊 درصد مشکوک</div>
+        <div style="background: rgba(0,0,0,0.1); border-radius: 8px; height: 14px; overflow: hidden; margin-top: 0.6rem;">
+          <div style="width: ${vpnPercent}%; height: 100%; background: ${vpnColor}; transition: width 0.6s;"></div>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.4rem;">${formatNumber(vpnPercent)}٪ از کل کلیک‌ها مشکوک هستند</div>
+      </div>
+    </div>`;
+
+  // ---------- جدول مقایسه ----------
+  if (comparison.length === 0) {
+    table.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 1rem;">داده‌ای موجود نیست</p>';
+    return;
+  }
+
+  const maxCount = Math.max(...comparison.map(c => c.count), 1);
+
+  const rows = comparison.map(row => {
+    const suspicious = (row.detected_country || '').toUpperCase() !== (row.estimated_real_country || '').toUpperCase();
+    const flagD = countryCodeToFlag(row.detected_country);
+    const flagR = countryCodeToFlag(row.estimated_real_country);
+    const barColor = suspicious ? '#ef4444' : '#10b981';
+    const barWidth = Math.max((row.count / maxCount) * 100, 2);
+
+    return `
+      <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 8px; margin-bottom: 0.5rem; background: ${suspicious ? 'rgba(239, 68, 68, 0.06)' : 'transparent'}; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 170px; flex: 1;">
+          <span style="font-size: 1.2rem;">${flagD}</span>
+          <span style="font-size: 0.85rem;">${countryLabel(row.detected_country)}</span>
+        </div>
+        <div style="color: var(--text-secondary);">→</div>
+        <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 170px; flex: 1;">
+          <span style="font-size: 1.2rem;">${flagR}</span>
+          <span style="font-size: 0.85rem;">${countryLabel(row.estimated_real_country)}</span>
+        </div>
+        <div style="min-width: 80px; flex: 1;">
+          <div style="background: var(--bg-secondary); border-radius: 4px; height: 8px; overflow: hidden;">
+            <div style="width: ${barWidth}%; height: 100%; background: ${barColor}; transition: width 0.5s;"></div>
+          </div>
+        </div>
+        <div style="min-width: 70px; text-align: left; font-weight: 700; font-size: 0.9rem;">${formatNumber(row.count)}</div>
+        <div style="min-width: 90px; font-size: 0.75rem; font-weight: 700; color: ${barColor};">${suspicious ? '⚠️ مشکوک' : '✅ طبیعی'}</div>
+      </div>`;
+  }).join('');
+
+  table.innerHTML = `
+    <div style="background: var(--bg-secondary); border-radius: 10px; padding: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0 0.75rem 0.6rem 0.75rem; font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; flex-wrap: wrap;">
+        <div style="min-width: 170px; flex: 1;">کشور نشان‌داده‌شده</div>
+        <div style="min-width: 170px; flex: 1;">کشور واقعی (تخمینی)</div>
+        <div style="min-width: 80px; flex: 1;">سهم</div>
+        <div style="min-width: 70px;">کلیک</div>
+        <div style="min-width: 90px;">وضعیت</div>
+      </div>
+      ${rows}
+    </div>`;
 }
 
 async function exportData(format) {

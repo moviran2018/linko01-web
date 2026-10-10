@@ -67,6 +67,28 @@
       </div>
 
       <div class="card" style="max-width: 600px; margin-top: 1.5rem;">
+        <h2 style="margin-bottom: 0.25rem;">ربات تلگرام 🔗</h2>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+          حساب کاربری خود را به تلگرام متصل کنید تا بتوانید با دستور <code>/shorten</code> لینک بسازید و با
+          <code>/stats</code> آمار ببینید.
+        </p>
+        <div id="telegramStatus" style="margin-bottom: 1rem; font-size: 0.875rem;"></div>
+        <form id="telegramForm" onsubmit="return linkTelegram(event)">
+          <div class="form-group">
+            <label for="telegram_user_id">شناسه عددی تلگرام شما</label>
+            <input type="number" class="input" id="telegram_user_id" placeholder="مثلاً 123456789" min="1">
+            <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.4rem;">
+              شناسه خود را از ربات <b>@userinfobot</b> یا <b>@getmyid_bot</b> دریافت کنید.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn" style="flex: 1; justify-content: center;">اتصال حساب تلگرام</button>
+            <button type="button" onclick="unlinkTelegram()" class="btn-danger btn">قطع اتصال</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card" style="max-width: 600px; margin-top: 1.5rem;">
         <h2 style="margin-bottom: 0.25rem;">مدیریت حساب کاربری</h2>
         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
           برای تغییر نام کاربری یا رمز عبور، رمز فعلی خود را وارد کنید. نام کاربری جدید در نشست شما به‌روزرسانی می‌شود.
@@ -143,6 +165,51 @@
     initSettings();
     checkAuth();
     initSidebar();
+
+    // ---------- اتصال تلگرام ----------
+    async function loadTelegramStatus() {
+      try {
+        const data = await apiCall('/auth/me');
+        const el = document.getElementById('telegramStatus');
+        if (data.success && data.data.telegram_user_id) {
+          el.innerHTML = '✅ حساب تلگرام شما متصل است (شناسه: <b>' + data.data.telegram_user_id + '</b>)';
+          document.getElementById('telegram_user_id').value = data.data.telegram_user_id;
+        } else {
+          el.innerHTML = '⛔ حساب تلگرامی متصل نیست.';
+        }
+      } catch (e) {
+        // نادیده می‌گیریم
+      }
+    }
+    loadTelegramStatus();
+
+    async function linkTelegram(event) {
+      event.preventDefault();
+      const tgId = document.getElementById('telegram_user_id').value;
+      if (!tgId) {
+        showToast('شناسه تلگرام را وارد کنید', 'error');
+        return false;
+      }
+      const data = await apiCall('/auth/link-telegram', 'POST', { telegram_user_id: parseInt(tgId) });
+      if (data.success) {
+        showToast('حساب تلگرام متصل شد');
+        loadTelegramStatus();
+      } else {
+        showToast(data.message || 'خطا در اتصال', 'error');
+      }
+      return false;
+    }
+
+    async function unlinkTelegram() {
+      const data = await apiCall('/auth/link-telegram', 'DELETE');
+      if (data.success) {
+        showToast('اتصال تلگرام قطع شد');
+        document.getElementById('telegram_user_id').value = '';
+        loadTelegramStatus();
+      } else {
+        showToast(data.message || 'خطا در قطع اتصال', 'error');
+      }
+    }
 
     // به‌روزرسانی حساب کاربری (نام کاربری و/یا رمز عبور)
     async function updateAccount(event) {

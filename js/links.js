@@ -10,7 +10,97 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!checkAuth()) return;
   initSidebar();
   loadLinks();
+
+  // نمایش/پنهان‌کردن فیلدهای وابسته به چکباکس‌ها در فرم ساخت
+  const cloakingBox = document.getElementById('cloaking_enabled');
+  const deepLinkBox = document.getElementById('enable_deep_linking');
+  const rotatorBox = document.getElementById('enable_rotator');
+
+  if (cloakingBox) {
+    cloakingBox.addEventListener('change', () => {
+      document.getElementById('safeUrlGroup').style.display = cloakingBox.checked ? 'block' : 'none';
+    });
+  }
+  if (deepLinkBox) {
+    deepLinkBox.addEventListener('change', () => {
+      const show = deepLinkBox.checked ? 'block' : 'none';
+      document.getElementById('iosDeepLinkGroup').style.display = show;
+      document.getElementById('androidDeepLinkGroup').style.display = show;
+    });
+  }
+  if (rotatorBox) {
+    rotatorBox.addEventListener('change', () => {
+      document.getElementById('destinationsGroup').style.display = rotatorBox.checked ? 'block' : 'none';
+      if (rotatorBox.checked && document.querySelectorAll('#destinationsList .dest-row').length === 0) {
+        addDestination();
+      }
+    });
+  }
+
+  // همین رفتار برای فرم ویرایش
+  const editCloakingBox = document.getElementById('edit_cloaking_enabled');
+  const editDeepLinkBox = document.getElementById('edit_enable_deep_linking');
+  const editRotatorBox = document.getElementById('edit_enable_rotator');
+
+  if (editCloakingBox) {
+    editCloakingBox.addEventListener('change', () => {
+      document.getElementById('editSafeUrlGroup').style.display = editCloakingBox.checked ? 'block' : 'none';
+    });
+  }
+  if (editDeepLinkBox) {
+    editDeepLinkBox.addEventListener('change', () => {
+      const show = editDeepLinkBox.checked ? 'block' : 'none';
+      document.getElementById('editIosDeepLinkGroup').style.display = show;
+      document.getElementById('editAndroidDeepLinkGroup').style.display = show;
+    });
+  }
+  if (editRotatorBox) {
+    editRotatorBox.addEventListener('change', () => {
+      document.getElementById('editDestinationsGroup').style.display = editRotatorBox.checked ? 'block' : 'none';
+      if (editRotatorBox.checked && document.querySelectorAll('#editDestinationsList .dest-row').length === 0) {
+        addDestination('edit');
+      }
+    });
+  }
 });
+
+// ---------- مقاصد چرخش لینک (روتور) ----------
+
+// افزودن یک ردیف مقصد جدید به فرم
+// prefix: '' برای فرم ساخت، 'edit_' برای فرم ویرایش
+function addDestination(prefix = '') {
+  const listId = prefix ? 'editDestinationsList' : 'destinationsList';
+  const list = document.getElementById(listId);
+  if (!list) return;
+
+  const row = document.createElement('div');
+  row.className = 'dest-row';
+  row.style.cssText = 'display: flex; gap: 0.5rem; align-items: center;';
+  row.innerHTML = `
+    <input type="url" class="input dest-url" placeholder="https://example.com/landing" style="flex: 3;">
+    <input type="number" class="input dest-weight" placeholder="وزن" min="1" max="10000" value="100" style="flex: 1;">
+    <button type="button" onclick="this.parentElement.remove()" class="btn-danger btn btn-sm" title="حذف">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+// جمع‌آوری مقاصد از فرم
+function collectDestinations(prefix = '') {
+  const listId = prefix ? 'editDestinationsList' : 'destinationsList';
+  const list = document.getElementById(listId);
+  if (!list) return [];
+
+  const rows = list.querySelectorAll('.dest-row');
+  const destinations = [];
+  rows.forEach((row) => {
+    const url = row.querySelector('.dest-url').value.trim();
+    const weight = parseInt(row.querySelector('.dest-weight').value) || 100;
+    if (url) {
+      destinations.push({ url, weight, is_active: true });
+    }
+  });
+  return destinations;
+}
 
 async function loadLinks() {
   try {
@@ -132,7 +222,13 @@ document.getElementById('createForm').addEventListener('submit', async (e) => {
     slug: document.getElementById('slug').value || null,
     title: document.getElementById('title').value || null,
     max_clicks: document.getElementById('max_clicks').value ? parseInt(document.getElementById('max_clicks').value) : null,
-    expires_at: document.getElementById('expires_at').value || null
+    expires_at: document.getElementById('expires_at').value || null,
+    cloaking_enabled: document.getElementById('cloaking_enabled').checked,
+    safe_url: document.getElementById('safe_url').value || null,
+    enable_deep_linking: document.getElementById('enable_deep_linking').checked,
+    ios_deep_link: document.getElementById('ios_deep_link').value || null,
+    android_deep_link: document.getElementById('android_deep_link').value || null,
+    destinations: document.getElementById('enable_rotator').checked ? collectDestinations() : []
   };
   
   const data = await apiCall('/links', 'POST', payload);
@@ -180,6 +276,36 @@ function openEditModal(id) {
   document.getElementById('edit_max_clicks').value = link.max_clicks || '';
   document.getElementById('edit_expires_at').value = toDateTimeLocal(link.expires_at);
   document.getElementById('edit_is_active').checked = !!link.is_active;
+
+  // کلاکینگ
+  document.getElementById('edit_cloaking_enabled').checked = !!link.cloaking_enabled;
+  document.getElementById('edit_safe_url').value = link.safe_url || '';
+  document.getElementById('editSafeUrlGroup').style.display = link.cloaking_enabled ? 'block' : 'none';
+
+  // دیپ‌لینک
+  document.getElementById('edit_enable_deep_linking').checked = !!link.enable_deep_linking;
+  document.getElementById('edit_ios_deep_link').value = link.ios_deep_link || '';
+  document.getElementById('edit_android_deep_link').value = link.android_deep_link || '';
+  const deepShow = link.enable_deep_linking ? 'block' : 'none';
+  document.getElementById('editIosDeepLinkGroup').style.display = deepShow;
+  document.getElementById('editAndroidDeepLinkGroup').style.display = deepShow;
+
+  // روتور: مقاصد موجود را نمایش می‌دهیم
+  const editList = document.getElementById('editDestinationsList');
+  editList.innerHTML = '';
+  const hasDestinations = link.destinations && link.destinations.length > 0;
+  document.getElementById('edit_enable_rotator').checked = hasDestinations;
+  document.getElementById('editDestinationsGroup').style.display = hasDestinations ? 'block' : 'none';
+  if (hasDestinations) {
+    link.destinations.forEach((d) => {
+      addDestination('edit');
+      const rows = editList.querySelectorAll('.dest-row');
+      const lastRow = rows[rows.length - 1];
+      lastRow.querySelector('.dest-url').value = d.url;
+      lastRow.querySelector('.dest-weight').value = d.weight;
+    });
+  }
+
   document.getElementById('editModal').style.display = 'flex';
 }
 
@@ -198,7 +324,13 @@ document.getElementById('editForm').addEventListener('submit', async (e) => {
     title: document.getElementById('edit_title').value || null,
     max_clicks: document.getElementById('edit_max_clicks').value ? parseInt(document.getElementById('edit_max_clicks').value) : null,
     expires_at: document.getElementById('edit_expires_at').value || null,
-    is_active: document.getElementById('edit_is_active').checked
+    is_active: document.getElementById('edit_is_active').checked,
+    cloaking_enabled: document.getElementById('edit_cloaking_enabled').checked,
+    safe_url: document.getElementById('edit_safe_url').value || null,
+    enable_deep_linking: document.getElementById('edit_enable_deep_linking').checked,
+    ios_deep_link: document.getElementById('edit_ios_deep_link').value || null,
+    android_deep_link: document.getElementById('edit_android_deep_link').value || null,
+    destinations: document.getElementById('edit_enable_rotator').checked ? collectDestinations('edit') : []
   };
 
   const btn = e.target.querySelector('button[type="submit"]');

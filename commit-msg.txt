@@ -1,0 +1,3 @@
+همگام‌سازی با ریپو اصلی: اتصال دامنه اختصاصی linkma.ir
+
+- جایگزینی آدرس workers.dev با linkma.ir در js/config.js (WORKER_ORIGIN برای GitHub Pages)

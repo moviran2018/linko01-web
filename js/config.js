@@ -9,7 +9,7 @@
   const host = window.location.hostname;
   if (host.indexOf('github.io') === -1) return; // روی Worker بدون تغییر می‌ماند
   // آدرس ورکر (API + ریدایرکت لینک‌های کوتاه)
-  const WORKER_ORIGIN = 'https://linko01.moviran2018.workers.dev';
+  const WORKER_ORIGIN = 'https://linkma.ir';
   window.LINKO_API_BASE = WORKER_ORIGIN + '/api';
   window.LINKO_SHORT_ORIGIN = WORKER_ORIGIN;
   // پیشوند مسیر پروژه در GitHub Pages: /<repo-name>/

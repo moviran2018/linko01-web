@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تنظیمات | Linko</title>
+  <title>تنظیمات | Linkma</title>
   <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
   <script src="../js/config.js"></script>
   <link rel="stylesheet" href="../css/style.css">
@@ -11,7 +11,7 @@
 <body>
   <div class="admin-layout">
     <aside class="sidebar">
-      <div class="logo" style="margin-bottom: 2rem;">Linko</div>
+      <div class="logo" style="margin-bottom: 2rem;">Linkma</div>
       <nav>
         <a href="dashboard.html" class="nav-link">📊 داشبورد</a>
         <a href="links.html" class="nav-link">🔗 لینک‌ها</a>
@@ -58,7 +58,7 @@
         </div>
         
         <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
-          <h2 style="margin-bottom: 1rem;">درباره Linko</h2>
+          <h2 style="margin-bottom: 1rem;">درباره Linkma</h2>
           <p style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.6;">
             نسخه ۱.۰.۰ — کوتاه‌کننده لینک حرفه‌ای مبتنی بر Cloudflare Workers.<br>
             تمام داده‌ها در دیتابیس D1 کلودفلر ذخیره می‌شوند و IP کاربران هرگز به صورت خام ذخیره نمی‌شود.
@@ -116,9 +116,9 @@
   <script>
     // مقداردهی اولیه تنظیمات ذخیره شده
     function initSettings() {
-      const theme = localStorage.getItem('linko_theme') || 'light';
-      const dir = localStorage.getItem('linko_dir') || 'rtl';
-      const lang = localStorage.getItem('linko_lang') || 'fa';
+      const theme = localStorage.getItem('linkma_theme') || 'light';
+      const dir = localStorage.getItem('linkma_dir') || 'rtl';
+      const lang = localStorage.getItem('linkma_lang') || 'fa';
       
       setTheme(theme, false);
       setDirection(dir, false);
@@ -127,7 +127,7 @@
     
     function setTheme(theme, save = true) {
       document.documentElement.setAttribute('data-theme', theme);
-      if (save) localStorage.setItem('linko_theme', theme);
+      if (save) localStorage.setItem('linkma_theme', theme);
       
       document.getElementById('lightBtn').style.background = theme === 'light' ? 'var(--primary)' : '';
       document.getElementById('lightBtn').style.color = theme === 'light' ? 'white' : '';
@@ -137,7 +137,7 @@
     
     function setDirection(dir, save = true) {
       document.documentElement.setAttribute('dir', dir);
-      if (save) localStorage.setItem('linko_dir', dir);
+      if (save) localStorage.setItem('linkma_dir', dir);
       
       document.getElementById('rtlBtn').style.background = dir === 'rtl' ? 'var(--primary)' : '';
       document.getElementById('rtlBtn').style.color = dir === 'rtl' ? 'white' : '';
@@ -147,7 +147,7 @@
     
     function setLang(lang, save = true) {
       document.documentElement.setAttribute('lang', lang);
-      if (save) localStorage.setItem('linko_lang', lang);
+      if (save) localStorage.setItem('linkma_lang', lang);
       
       document.getElementById('faBtn').style.background = lang === 'fa' ? 'var(--primary)' : '';
       document.getElementById('faBtn').style.color = lang === 'fa' ? 'white' : '';
@@ -227,10 +227,10 @@
         showToast(data.message || 'حساب کاربری شما به‌روزرسانی شد');
         // ذخیرهٔ توکن تازه
         if (data.data && data.data.token) {
-          localStorage.setItem('linko_token', data.data.token);
+          localStorage.setItem('linkma_token', data.data.token);
         }
         if (data.data && data.data.username) {
-          localStorage.setItem('linko_username', data.data.username);
+          localStorage.setItem('linkma_username', data.data.username);
         }
         document.getElementById('accountForm').reset();
         // بارگذاری مجدد نوار کناری با نام کاربری جدید

@@ -334,12 +334,12 @@ async function exportData(format) {
     
     if (format === 'json') {
       const data = await res.json();
-      downloadFile(JSON.stringify(data, null, 2), `linko-analytics.json`, 'application/json');
+      downloadFile(JSON.stringify(data, null, 2), `linkma-analytics.json`, 'application/json');
     } else {
       const blob = await res.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `linko-analytics.csv`;
+      a.download = `linkma-analytics.csv`;
       a.click();
       URL.revokeObjectURL(a.href);
     }

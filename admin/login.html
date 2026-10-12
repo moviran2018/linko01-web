@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ورود | Linko</title>
+  <title>ورود | Linkma</title>
   <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
   <script src="../js/config.js"></script>
   <script src="../js/api.js"></script>
@@ -13,7 +13,7 @@
   <div class="login-container">
     <div class="card login-card">
       <div style="text-align: center; margin-bottom: 2rem;">
-        <h1 class="logo">Linko</h1>
+        <h1 class="logo">Linkma</h1>
         <p style="color: var(--text-secondary); margin-top: 0.5rem;">پنل مدیریت کوتاه‌کننده لینک</p>
       </div>
       <form id="loginForm">
@@ -47,9 +47,9 @@
         const data = await res.json();
         
         if (res.ok && data.success) {
-          localStorage.setItem('linko_token', data.data.token);
-          localStorage.setItem('linko_username', data.data.username);
-          localStorage.setItem('linko_role', data.data.role || 'user');
+          localStorage.setItem('linkma_token', data.data.token);
+          localStorage.setItem('linkma_username', data.data.username);
+          localStorage.setItem('linkma_role', data.data.role || 'user');
           window.location.href = adminPath('/admin/dashboard.html');
         } else {
           errorMsg.textContent = data.message || 'خطا در ورود';

@@ -1,10 +1,10 @@
-// Linko API Client - لایه ارتباط با سرور
+// Linkma API Client - لایه ارتباط با سرور
 // API_BASE به‌صورت خودکار تنظیم می‌شود:
 //  - روی Worker (همان origin): "/api"
 //  - روی GitHub Pages (origin متفاوت): آدرس کامل Worker
-// در صورت تنظیم manual، از window.LINKO_API_BASE استفاده می‌شود.
+// در صورت تنظیم manual، از window.LINKMA_API_BASE استفاده می‌شود.
 function resolveApiBase() {
-  if (window.LINKO_API_BASE) return window.LINKO_API_BASE;
+  if (window.LINKMA_API_BASE) return window.LINKMA_API_BASE;
   // هرجا که برنامه سرو شود، مسیر "/api" همان origin است؛ مگر اینکه origin دیگری صریحاً داده شود
   return '/api';
 }
@@ -12,18 +12,44 @@ const API_BASE = resolveApiBase();
 
 // توکن را از localStorage می‌گیرد
 function getToken() {
-  return localStorage.getItem('linko_token');
+  return localStorage.getItem('linkma_token');
 }
 
 // پیشوند مسیر فایل‌های استاتیک:
 //  - روی Worker: "/" (ریشه)
 //  - روی GitHub Pages: "/linko01-web/" (زیرمسیر پروژه)
-// با تنظیم window.LINKO_BASE_PATH می‌توان آن را override کرد.
+// با تنظیم window.LINKMA_BASE_PATH می‌توان آن را override کرد.
 function resolveBasePath() {
-  if (window.LINKO_BASE_PATH) return window.LINKO_BASE_PATH;
+  if (window.LINKMA_BASE_PATH) return window.LINKMA_BASE_PATH;
   return '/';
 }
 const BASE_PATH = resolveBasePath();
+
+// مهاجرت یک‌بارهٔ کلیدهای localStorage (تغییر برند Linko → Linkma)
+// نشست کاربران فعلی حفظ می‌شود: اگر کلید جدید خالی است، مقدار کلید قدیمی منتقل می‌شود.
+(function migrateOldStorageKeys() {
+  const KEY_MAP = {
+    linko_token: 'linkma_token',
+    linko_username: 'linkma_username',
+    linko_role: 'linkma_role',
+    linko_user: 'linkma_user',
+    linko_theme: 'linkma_theme',
+    linko_dir: 'linkma_dir',
+    linko_lang: 'linkma_lang',
+  };
+  try {
+    for (const oldKey in KEY_MAP) {
+      const newKey = KEY_MAP[oldKey];
+      if (localStorage.getItem(newKey) === null) {
+        const value = localStorage.getItem(oldKey);
+        if (value !== null) localStorage.setItem(newKey, value);
+      }
+      localStorage.removeItem(oldKey);
+    }
+  } catch (e) {
+    // localStorage ممکن است در برخی محیط‌ها در دسترس نباشد؛ نادیده می‌گیریم
+  }
+})();
 
 // ساخت یک مسیر نسبی به صفحه ادمین با توجه به پیشوند مسیر
 function adminPath(path) {
@@ -42,10 +68,10 @@ function checkAuth() {
 
 // خروج از حساب
 function logout() {
-  localStorage.removeItem('linko_token');
-  localStorage.removeItem('linko_username');
-  localStorage.removeItem('linko_role');
-  localStorage.removeItem('linko_user');
+  localStorage.removeItem('linkma_token');
+  localStorage.removeItem('linkma_username');
+  localStorage.removeItem('linkma_role');
+  localStorage.removeItem('linkma_user');
   window.location.href = adminPath('/admin/login.html');
 }
 
@@ -56,9 +82,9 @@ function getCurrentUser() {
   if (_currentUserPromise) return _currentUserPromise;
   _currentUserPromise = apiCall('/auth/me').then(data => {
     if (data.success && data.data) {
-      localStorage.setItem('linko_username', data.data.username);
-      localStorage.setItem('linko_role', data.data.role);
-      localStorage.setItem('linko_user', JSON.stringify(data.data));
+      localStorage.setItem('linkma_username', data.data.username);
+      localStorage.setItem('linkma_role', data.data.role);
+      localStorage.setItem('linkma_user', JSON.stringify(data.data));
     }
     return data;
   }).catch(() => null);
@@ -67,7 +93,7 @@ function getCurrentUser() {
 
 // آیا کاربر جاری مدیر اصلی است؟ (از کش localStorage)
 function isAdmin() {
-  return localStorage.getItem('linko_role') === 'admin';
+  return localStorage.getItem('linkma_role') === 'admin';
 }
 
 // راه‌اندازی نوار کناری:
@@ -166,7 +192,7 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     
     // اگر توکن منقضی شده بود
     if (res.status === 401) {
-      localStorage.removeItem('linko_token');
+      localStorage.removeItem('linkma_token');
       window.location.href = adminPath('/admin/login.html');
       return { success: false, message: 'نشست شما منقضی شده است' };
     }
@@ -197,9 +223,9 @@ function showToast(message, type = 'success') {
 
 // کپی لینک کوتاه در کلیپ‌بورد
 // نکته: لینک کوتاه باید از origin ورکر ساخته شود، نه origin صفحه.
-// روی Worker این دو یکی است؛ روی GitHub Pages، LINKO_SHORT_ORIGIN تنظیم می‌شود.
+// روی Worker این دو یکی است؛ روی GitHub Pages، LINKMA_SHORT_ORIGIN تنظیم می‌شود.
 function getShortOrigin() {
-  if (window.LINKO_SHORT_ORIGIN) return window.LINKO_SHORT_ORIGIN;
+  if (window.LINKMA_SHORT_ORIGIN) return window.LINKMA_SHORT_ORIGIN;
   return window.location.origin;
 }
 
